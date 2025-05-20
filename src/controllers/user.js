@@ -2,11 +2,6 @@ const User = require("../models/user");
 
 // User signup
 const signup = async (request, response) => {
-    const { fname, lname, age, gender, email, username, password } = request.body;
-    [fname, lname, age, gender, email, username, password].forEach(field => {
-        if(field === "") return response.status(400).json({ message:`${field} is required`, success:false });
-    });
-
     try 
     {
         const user = await User.create(request.body);
