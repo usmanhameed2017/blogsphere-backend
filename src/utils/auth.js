@@ -15,7 +15,7 @@ const generateAccessToken = (user) => {
 
     try 
     {
-        return jwt.sign(payload, accessTokenSecret, accessTokenExpiry);
+        return jwt.sign(payload, accessTokenSecret, { expiresIn: accessTokenExpiry });
     } 
     catch(error) 
     {
@@ -24,4 +24,19 @@ const generateAccessToken = (user) => {
     }
 };
 
-module.exports = { generateAccessToken };
+// Verify token
+const verifyToken = (token) => {
+    if(!token) return null;
+
+    try 
+    {
+        return jwt.verify(token, accessTokenSecret);
+    } 
+    catch(error) 
+    {
+        console.log(error.message);
+        return null;
+    }
+}
+
+module.exports = { generateAccessToken, verifyToken };
