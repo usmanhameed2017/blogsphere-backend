@@ -5,6 +5,7 @@ const fs = require("fs");
 const { uploadOnCloudinary } = require("../utils/cloudinary");
 const { generateAccessToken } = require("../utils/auth");
 const { cookieOptions } = require("../config");
+const { isValidObjectId } = require("mongoose");
 
 // User signup
 const signup = async (request, response) => {
@@ -81,4 +82,34 @@ const logout = (request, response) => {
     .json(new ApiResponse(200, null, "User has been logged-out"));
 };
 
-module.exports = { signup, login, logout };
+// Fetch all users
+const fetchAllUsers = async (request, response) => {
+    try 
+    {
+        const users = await User.find({}).select("-password");
+        return response.status(200).json(new ApiResponse(200, users, "All users fetched"));
+    } 
+    catch (error) 
+    {
+        throw new ApiError(500, error.message);
+    }
+};
+
+// Fetch all users
+const fetchSingleUser = async (request, response) => {
+    if(!request.params.id) throw new ApiError(400, "User id is missing");
+    if(!isValidObjectId(request.params.id)) throw new ApiError(400, "Invalid MongoDB ID");
+
+    try 
+    {
+        const user = await User.findById(request.params.id).select("-password");
+        if(!user) throw new ApiError(404, "User not found");
+        return response.status(200).json(new ApiResponse(200, user, "User fetched successfully"));
+    } 
+    catch (error) 
+    {
+        throw new ApiError(500, error.message);
+    }
+};
+
+module.exports = { signup, login, logout, fetchAllUsers, fetchSingleUser };
