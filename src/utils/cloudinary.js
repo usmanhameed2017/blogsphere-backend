@@ -24,6 +24,21 @@ const uploadOnCloudinary = async (localFilePath) => {
         if(fs.existsSync(localFilePath)) fs.unlinkSync(localFilePath);
         return null;
     }
-}
+};
 
-module.exports = { uploadOnCloudinary };
+// Delete profile image
+const deleteProfileImage = async (public_id) => {
+    if(!public_id) return null;
+    try 
+    {
+        const response = await cloudinary.uploader.destroy(public_id);
+        return response;
+    } 
+    catch(error) 
+    {
+        console.log(error.mesage);
+        return null;
+    }
+};
+
+module.exports = { uploadOnCloudinary, deleteProfileImage };
