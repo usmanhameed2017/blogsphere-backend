@@ -55,7 +55,7 @@ const userSchema = new Schema({
     profile_image:{
         type:String
     }    
-});
+}, { timestamps:true });
 
 // Hash password
 userSchema.pre("save", async function(next) {
