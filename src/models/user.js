@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const bcrypt = require("bcrypt");
 
 // Schema
@@ -56,6 +57,9 @@ const userSchema = new Schema({
         type:String
     }    
 }, { timestamps:true });
+
+// Inject paginate plugin
+userSchema.plugin(aggregatePaginate);
 
 // Hash password
 userSchema.pre("save", async function(next) {
