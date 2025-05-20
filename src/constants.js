@@ -6,4 +6,18 @@ const cookieParserSecret = process.env.COOKIE_PARSER_SECRET;
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
 const accessTokenExpiry = process.env.ACCESS_TOKEN_EXPIRY;
 
-module.exports = { port, mongodbUrl, mongodbName, cookieParserSecret, accessTokenSecret, accessTokenExpiry };
+const cloudinaryCloudName = process.env.CLOUDINARY_CLOUD_NAME;
+const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY;
+const cloudinaryApiSecret = process.env.CLOUDINARY_API_SECRET;
+
+module.exports = { 
+    port, 
+    mongodbUrl, 
+    mongodbName, 
+    cookieParserSecret, 
+    accessTokenSecret, 
+    accessTokenExpiry,
+    cloudinaryCloudName,
+    cloudinaryApiKey,
+    cloudinaryApiSecret
+};
