@@ -73,4 +73,12 @@ const login = async (request, response) => {
     .json(new ApiResponse(200, { accessToken, user:userData }, "Login successful!"));
 }
 
-module.exports = { signup, login };
+// Logout
+const logout = (request, response) => {
+    request.user = null;
+    return response.status(200)
+    .clearCookie("accessToken", cookieOptions)
+    .json(new ApiResponse(200, null, "User has been logged-out"));
+};
+
+module.exports = { signup, login, logout };
