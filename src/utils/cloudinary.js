@@ -1,6 +1,7 @@
 const { v2:cloudinary } = require("cloudinary");
 const { cloudinaryCloudName, cloudinaryApiKey, cloudinaryApiSecret } = require("../constants");
 const fs = require("fs");
+const path = require("path");
 
 // Configuration
 cloudinary.config({
@@ -26,6 +27,13 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 };
 
+// Get public id
+const getPublicID = (url) => {
+    if(!url) return null;
+    const public_id = path.parse(url).name;
+    return public_id;
+}
+
 // Delete profile image
 const deleteProfileImage = async (public_id) => {
     if(!public_id) return null;
@@ -41,4 +49,4 @@ const deleteProfileImage = async (public_id) => {
     }
 };
 
-module.exports = { uploadOnCloudinary, deleteProfileImage };
+module.exports = { uploadOnCloudinary, getPublicID, deleteProfileImage };
