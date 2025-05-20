@@ -84,10 +84,26 @@ const logout = (request, response) => {
 
 // Fetch all users
 const fetchAllUsers = async (request, response) => {
+    const { page = 1, limit = 10 } = request.params;
     try 
     {
-        const users = await User.find({}).select("-password");
-        return response.status(200).json(new ApiResponse(200, users, "All users fetched"));
+        // Aggregation
+        const aggregate = User.aggregate([
+            { $project:{ _id:1, fname:1, lname:1, age:1, gender:1, email:1, username:1, profile_image:1 } },
+            { $sort:{ createdAt:-1 } }
+        ]);
+
+        // Pagination options
+        const options = {
+            page: parseInt(page),
+            limit: parseInt(limit)
+        };
+
+        // Execute query
+        const result = await User.aggregatePaginate(aggregate, options);
+        if(!result || page > result.totalPages) throw new ApiError(404, "Users not found");
+
+        return response.status(200).json(new ApiResponse(200, result, "All users fetched"));
     } 
     catch (error) 
     {
