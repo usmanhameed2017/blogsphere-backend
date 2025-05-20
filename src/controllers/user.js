@@ -4,6 +4,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const fs = require("fs");
 const { uploadOnCloudinary } = require("../utils/cloudinary");
 const { generateAccessToken } = require("../utils/auth");
+const { cookieOptions } = require("../config");
 
 // User signup
 const signup = async (request, response) => {
@@ -67,7 +68,9 @@ const login = async (request, response) => {
     const userData = user.toObject();
     delete userData.password; // Exclude password
 
-    return response.status(200).json(new ApiResponse(200, { accessToken, user:userData }, "Login successful!"));
+    return response.status(200)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .json(new ApiResponse(200, { accessToken, user:userData }, "Login successful!"));
 }
 
 module.exports = { signup, login };
