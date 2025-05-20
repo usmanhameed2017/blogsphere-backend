@@ -111,10 +111,10 @@ const fetchAllUsers = async (request, response) => {
     }
 };
 
-// Fetch all users
+// Fetch single user
 const fetchSingleUser = async (request, response) => {
-    if(!request.params.id) throw new ApiError(400, "User id is missing");
-    if(!isValidObjectId(request.params.id)) throw new ApiError(400, "Invalid MongoDB ID");
+    if(!request.params?.id) throw new ApiError(400, "User ID is missing");
+    if(!isValidObjectId(request.params?.id)) throw new ApiError(400, "Invalid MongoDB ID");
 
     try 
     {
@@ -128,4 +128,59 @@ const fetchSingleUser = async (request, response) => {
     }
 };
 
-module.exports = { signup, login, logout, fetchAllUsers, fetchSingleUser };
+// Edit user
+const editUser = async (request, response) => {
+    if(!request.params?.id) throw new ApiError(400, "User ID is missing");
+    if(!isValidObjectId(request.params?.id)) throw new ApiError(400, "Invalid MongoDB ID");
+
+    try 
+    {
+        const user = await User.findById(request.params.id);
+        if(!user) 
+        {
+            if(request.file?.path && fs.existsSync(request.file?.path)) fs.unlinkSync(request.file?.path);
+            throw new ApiError(404, "User not found");
+        }
+    
+        // If new profile image is uploaded
+        if(request.file?.path && fs.existsSync(request.file?.path))
+        {
+            request.body.profile_image = await uploadOnCloudinary(request.file.path);
+        }
+        else
+        {
+            request.body.profile_image = user?.profile_image;
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(request.params.id, request.body, { new:true }).select("-password");
+        if(request.file?.path && fs.existsSync(request.file?.path)) fs.unlinkSync(user?.profile_image); // Remove old profile image
+
+        return response.status(200).json(new ApiResponse(200, updatedUser, "User has been updated successfully!"))
+    } 
+    catch(error) 
+    {
+        if(request.file?.path && fs.existsSync(request.file?.path)) fs.unlinkSync(request.file?.path);
+        throw new ApiError(500, error.message);
+    }
+
+};
+
+// Delete user
+const deleteUser = async (request, response) => {
+    if(!request.params?.id) throw new ApiError(400, "User ID is missing");
+    if(!isValidObjectId(request.params?.id)) throw new ApiError(400, "Invalid MongoDB ID");
+
+    try 
+    {
+        const user = await User.findByIdAndDelete(request.params.id).select("-password");
+        if(!user) throw new ApiError(404, "User not found");    
+        
+        return response.status(200).json(new ApiResponse(200, user, "User has been deleted successfully!"));
+    } 
+    catch(error) 
+    {
+        throw new ApiError(500, error.message);
+    }
+};
+
+module.exports = { signup, login, logout, fetchAllUsers, fetchSingleUser, editUser, deleteUser };

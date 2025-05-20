@@ -1,4 +1,4 @@
-const { signup, login, logout, fetchAllUsers, fetchSingleUser } = require("../controllers/user");
+const { signup, login, logout, fetchAllUsers, fetchSingleUser, editUser, deleteUser } = require("../controllers/user");
 const { checkAuth } = require("../middlewares/auth");
 const upload = require("../middlewares/multer");
 const userRouter = require("express").Router();
@@ -15,8 +15,11 @@ userRouter.route("/logout").get(checkAuth, logout);
 // Fetch all users
 userRouter.route("/").get(checkAuth, fetchAllUsers);
 
-// Fetch single user
-userRouter.route("/:id").get(checkAuth, fetchSingleUser);
+
+userRouter.route("/:id")
+.get(checkAuth, fetchSingleUser) // Fetch single user
+.put(checkAuth, upload.single("profile_image"), editUser) // Edit user
+.delete(checkAuth, deleteUser);
 
 
 module.exports = userRouter;
