@@ -24,7 +24,7 @@ const signup = async (request, response) => {
     }
 
     // For profile image
-    const profile_image = request.body.file?.path || "";
+    const profile_image = request.file?.path || "";
     if(profile_image)
     {
         request.body.profile_image = await uploadOnCloudinary(profile_image);
