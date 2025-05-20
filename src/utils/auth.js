@@ -10,7 +10,8 @@ const generateAccessToken = (user) => {
         _id:user._id,
         fname:user.fname,
         email:user.email,
-        username:user.username
+        username:user.username,
+        role:user.role
     };
 
     try 
