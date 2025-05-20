@@ -5,7 +5,6 @@ const cookieParser = require("cookie-parser");
 const { corsOptions, limiterOptions } = require("./config");
 const { cookieParserSecret } = require("./constants");
 const path = require("path");
-const userRouter = require("./routes/user");
 
 // Express app
 const app = express();
