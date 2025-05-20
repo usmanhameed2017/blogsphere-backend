@@ -3,6 +3,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const fs = require("fs");
 const { uploadOnCloudinary } = require("../utils/cloudinary");
+const { generateAccessToken } = require("../utils/auth");
 
 // User signup
 const signup = async (request, response) => {
@@ -45,4 +46,28 @@ const signup = async (request, response) => {
     }
 };
 
-module.exports = { signup };
+// User login
+const login = async (request, response) => {
+    const { email, username, password } = request.body;
+
+    // At least 1 field is must
+    if([email, username].every(field => field === "")) throw new ApiError(400, "Please enter email or username");
+
+    // If email or username exist
+    const user = await User.isUserExist(email, username);
+    if(!user) throw new ApiError(404, "The email or username you entered does not exist!");
+
+    // Match password
+    const isMatched = await user.matchPassword(password);
+    if(!isMatched) throw new ApiError(400, "Incorrect password");
+
+    // Generate access token
+    const accessToken = generateAccessToken(user);
+
+    const userData = user.toObject();
+    delete userData.password; // Exclude password
+
+    return response.status(200).json(new ApiResponse(200, { accessToken, user:userData }, "Login successful!"));
+}
+
+module.exports = { signup, login };
