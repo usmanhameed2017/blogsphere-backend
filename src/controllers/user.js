@@ -2,7 +2,7 @@ const User = require("../models/user");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const fs = require("fs");
-const { uploadOnCloudinary, getPublicID, deleteProfileImage } = require("../utils/cloudinary");
+const { uploadOnCloudinary, getPublicID, deleteImageOnCloudinary } = require("../utils/cloudinary");
 const { generateAccessToken } = require("../utils/auth");
 const { cookieOptions } = require("../config");
 const { isValidObjectId } = require("mongoose");
@@ -150,7 +150,7 @@ const editUser = async (request, response) => {
         if(request.file?.path && fs.existsSync(request.file?.path))
         {
             request.body.profile_image = await uploadOnCloudinary(request.file.path);
-            if(user?.profile_image && public_id) await deleteProfileImage(public_id); // Remove old profile image
+            if(user?.profile_image && public_id) await deleteImageOnCloudinary(public_id); // Remove old profile image
         }
         else
         {
@@ -180,7 +180,7 @@ const deleteUser = async (request, response) => {
         if(!user) throw new ApiError(404, "User not found");
         
         const public_id = getPublicID(user?.profile_image); // Get public ID
-        await deleteProfileImage(public_id); // Delete from cloudinary
+        await deleteImageOnCloudinary(public_id); // Delete from cloudinary
 
         return response.status(200).json(new ApiResponse(200, user, "User has been deleted successfully!"));
     } 

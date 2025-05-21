@@ -1,7 +1,7 @@
 const Blog = require("../models/blog");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
-const { uploadOnCloudinary } = require("../utils/cloudinary");
+const { uploadOnCloudinary, getPublicID, deleteImageOnCloudinary } = require("../utils/cloudinary");
 const fs = require("fs");
 const { isValidObjectId } = require("mongoose")
 
@@ -89,4 +89,38 @@ const fetchSingleBlog = async (request, response) => {
     }
 };
 
-module.exports = { createBlog, fetchAllBlogs, fetchSingleBlog };
+// Edit blog
+const editBlog = async (request, response) => {
+    if(!request.params.id) throw new ApiError(404, "Blog ID is missing");
+    if(!isValidObjectId(request.params.id)) throw new ApiError(400, "Invalid MongoDB ID");
+
+    // Extract uploaded cover image url
+    const coverImage = request.file?.path || "";
+
+    try 
+    {
+        // If cover image is uploaded
+        if(coverImage)
+        {
+            request.body.coverImage = await uploadOnCloudinary(coverImage); // New cover image added
+
+            // Check if old cover image exist
+            const blog = await Blog.findById(request.params.id).select("coverImage");
+            if(blog?.coverImage)
+            {
+                const public_id = getPublicID(blog?.coverImage);
+                await deleteImageOnCloudinary(public_id); // Remove old cover image
+            }
+        }
+        // Update blog
+        const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, request.body, { new:true });
+        if(!updatedBlog) throw new ApiError(404, "Blog not found");        
+    } 
+    catch(error) 
+    {
+        if(coverImage && fs.existsSync(coverImage)) fs.unlinkSync(coverImage);
+        throw new ApiError(404, error.message);
+    }
+};
+
+module.exports = { createBlog, fetchAllBlogs, fetchSingleBlog, editBlog };

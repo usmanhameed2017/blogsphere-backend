@@ -35,7 +35,7 @@ const getPublicID = (url) => {
 }
 
 // Delete profile image
-const deleteProfileImage = async (public_id) => {
+const deleteImageOnCloudinary = async (public_id) => {
     if(!public_id) return null;
     try 
     {
@@ -49,4 +49,4 @@ const deleteProfileImage = async (public_id) => {
     }
 };
 
-module.exports = { uploadOnCloudinary, getPublicID, deleteProfileImage };
+module.exports = { uploadOnCloudinary, getPublicID, deleteImageOnCloudinary };
