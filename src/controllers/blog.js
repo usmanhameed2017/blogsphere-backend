@@ -3,6 +3,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const { uploadOnCloudinary } = require("../utils/cloudinary");
 const fs = require("fs");
+const { isValidObjectId } = require("mongoose")
 
 // Create blog
 const createBlog = async (request, response) => {
@@ -71,4 +72,21 @@ const fetchAllBlogs = async (request, response) => {
     }
 };
 
-module.exports = { createBlog, fetchAllBlogs };
+// Fetch single blog
+const fetchSingleBlog = async (request, response) => {
+    if(!request.params.id) throw new ApiError(404, "Blog ID is missing");
+    if(!isValidObjectId(request.params.id)) throw new ApiError(400, "Invalid MongoDB ID");
+
+    try 
+    {
+        const blog = await Blog.findById(request.params.id);
+        if(!blog) throw new ApiError(404, "Blog not found");
+        return response.status(200).json(new ApiResponse(200, blog, "A blog has been fetched successfully"));
+    } 
+    catch(error) 
+    {
+        throw new ApiError(404, error.message);
+    }
+};
+
+module.exports = { createBlog, fetchAllBlogs, fetchSingleBlog };
