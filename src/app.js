@@ -9,7 +9,7 @@ const path = require("path");
 // Express app
 const app = express();
 
-// Middlewares
+// ************* MIDDLEWARES ************* //
 app.use(cors(corsOptions));
 app.use(rateLimit(limiterOptions));
 app.use(cookieParser(cookieParserSecret));
@@ -19,7 +19,12 @@ app.use("/public", express.static(path.resolve("public")));
 
 
 // ************* ROUTES ************* //
+// Imports
 const userRouter = require("./routes/user");
+const blogRouter = require("./routes/blog");
+
+// Registered routes
 app.use("/api/v1/user", userRouter);
+app.use("/api/vi/blog", blogRouter);
 
 module.exports = app;
