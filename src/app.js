@@ -25,6 +25,6 @@ const blogRouter = require("./routes/blog");
 
 // Registered routes
 app.use("/api/v1/user", userRouter);
-app.use("/api/vi/blog", blogRouter);
+app.use("/api/v1/blog", blogRouter);
 
 module.exports = app;
