@@ -42,6 +42,33 @@ const createBlog = async (request, response) => {
         }
         throw new ApiError(500, error.message);
     }
-}
+};
 
-module.exports = { createBlog };
+// Fetch all blogs
+const fetchAllBlogs = async (request, response) => {
+    const { page = 1, limit = 10 } = request.params;
+
+    // Aggregation
+    const aggregate = Blog.aggregate([
+        { $sort:{ createdAt:-1 } }
+    ]);
+
+    // Pagination options
+    const options = {
+        page:parseInt(page),
+        limit:parseInt(limit)
+    };
+
+    try 
+    {
+        const result = await Blog.aggregatePaginate(aggregate, options);
+        if(!result || page > result.totalPages) throw new ApiError(404, "Blog not found");
+        return response.status(200).json(new ApiResponse(200, result, "All blogs have been fetched successfully"));
+    } 
+    catch(error) 
+    {
+        throw new ApiError(404, error.message);
+    }
+};
+
+module.exports = { createBlog, fetchAllBlogs };

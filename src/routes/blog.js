@@ -1,12 +1,10 @@
 const blogRouter = require("express").Router();
-const { createBlog } = require("../controllers/blog");
+const { createBlog, fetchAllBlogs } = require("../controllers/blog");
 const { checkAuth } = require("../middlewares/auth");
 const upload = require("../middlewares/multer");
 
 blogRouter.route("/")
-.post(checkAuth, upload.fields([
-    { name:"coverImage", maxCount:1 }, 
-    { name:"images", maxCount:5 }]), 
-    createBlog);
+.post(checkAuth, upload.fields([{ name:"coverImage", maxCount:1 }, { name:"images", maxCount:5 }]), createBlog) // Create blog
+.get(checkAuth, fetchAllBlogs) // Fetch all blogs
 
 module.exports = blogRouter;
