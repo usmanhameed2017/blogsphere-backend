@@ -91,11 +91,20 @@ const fetchSingleBlog = async (request, response) => {
 
 // Edit blog
 const editBlog = async (request, response) => {
-    if(!request.params.id) throw new ApiError(404, "Blog ID is missing");
-    if(!isValidObjectId(request.params.id)) throw new ApiError(400, "Invalid MongoDB ID");
-
     // Extract uploaded cover image url
     const coverImage = request.file?.path || "";
+
+    if(!request.params.id) 
+    {
+        if(coverImage && fs.existsSync(coverImage)) fs.unlinkSync(coverImage);
+        throw new ApiError(404, "Blog ID is missing");
+    }
+
+    if(!isValidObjectId(request.params.id)) 
+    {
+        if(coverImage && fs.existsSync(coverImage)) fs.unlinkSync(coverImage);
+        throw new ApiError(400, "Invalid MongoDB ID");
+    }
 
     try 
     {
@@ -112,9 +121,12 @@ const editBlog = async (request, response) => {
                 await deleteImageOnCloudinary(public_id); // Remove old cover image
             }
         }
+
         // Update blog
         const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, request.body, { new:true });
-        if(!updatedBlog) throw new ApiError(404, "Blog not found");        
+        if(!updatedBlog) throw new ApiError(404, "Blog not found");
+        
+        return response.status(200).json(new ApiResponse(200, updatedBlog, "Blog has been updated successfully"));
     } 
     catch(error) 
     {
