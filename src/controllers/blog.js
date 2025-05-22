@@ -52,7 +52,7 @@ const createBlog = async (request, response) => {
 
 // Fetch all blogs
 const fetchAllBlogs = async (request, response) => {
-    // const { page = 1, limit = 10 } = request.params;
+    const { page = 1, limit = 10 } = request.params;
 
     // Aggregation
     const aggregate = Blog.aggregate([
