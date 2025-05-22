@@ -3,7 +3,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const { uploadOnCloudinary, getPublicID, deleteImageOnCloudinary } = require("../utils/cloudinary");
 const fs = require("fs");
-const { isValidObjectId } = require("mongoose")
+const { isValidObjectId, default: mongoose } = require("mongoose")
 
 // Create blog
 const createBlog = async (request, response) => {
@@ -56,6 +56,66 @@ const fetchAllBlogs = async (request, response) => {
 
     // Aggregation
     const aggregate = Blog.aggregate([
+        // Lookup
+        { 
+            $lookup:{
+                from:"likes",
+                localField:"_id",
+                foreignField:"blogID",
+                as:"likedBy",
+                pipeline:[
+                    {
+                        // Nested lookup
+                        $lookup:{
+                            from:"users",
+                            localField:"likedBy",
+                            foreignField:"_id",
+                            as:"user",
+                            pipeline:[
+                                {
+                                    $addFields:{
+                                        name:{
+                                            $concat:["$fname", " ", "$lname"]
+                                        }
+                                    }
+                                },
+                                { $project:{ name:1 } }
+                            ]
+                        }
+                    },
+
+                    // Destruct array
+                    { $unwind:"$user" },
+
+                    // Replace user wrapper
+                    { $replaceRoot: { newRoot: "$user" } }
+                ]
+            }
+        },
+
+        // Add field - totalLikes
+        {
+            $addFields:{
+                totalLikes:{
+                    $size:"$likedBy"
+                }
+            }
+        },
+
+        // Add field - isLiked
+        {
+            $addFields:{
+                isLiked:{
+                    $cond:{
+                        if:{ $in:[new mongoose.Types.ObjectId(String(request.user?._id)), "$likedBy._id"] },
+                        then:true,
+                        else:false
+                    }
+                }
+            }
+        },
+        
+        // Sort blogs
         { $sort:{ createdAt:-1 } }
     ]);
 
