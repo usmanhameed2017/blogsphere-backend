@@ -13,6 +13,7 @@ const createBlog = async (request, response) => {
 
     // If blog is posted with content images
     const images = request.files?.images?.map(image => image.path);
+    console.log(images)
     if(images && Array.isArray(images) && images.length > 0)
     {
         const contentImages = [];
@@ -21,6 +22,10 @@ const createBlog = async (request, response) => {
             contentImages.push(await uploadOnCloudinary(path));
         }
         request.body.images = contentImages;
+    }
+    else
+    {
+        request.body.images = [];
     }
 
     // Logged-in user
