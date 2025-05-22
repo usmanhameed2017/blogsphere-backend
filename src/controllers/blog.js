@@ -38,7 +38,7 @@ const createBlog = async (request, response) => {
         {
             for(const path of images)
             {
-                if(fs.existsSync(path)) fs.unlinkSync(path);
+                if(path && fs.existsSync(path)) fs.unlinkSync(path);
             }
         }
         throw new ApiError(500, error.message);
