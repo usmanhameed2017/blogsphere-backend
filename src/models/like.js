@@ -2,7 +2,7 @@ const { Schema, model } = require("mongoose");
 
 // Schema
 const likeSchema = new Schema({
-    blog_id:{
+    blogID:{
         type: Schema.Types.ObjectId,
         ref:"Blog",
         trim:true
