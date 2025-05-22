@@ -92,34 +92,41 @@ const fetchSingleBlog = async (request, response) => {
 // Edit blog
 const editBlog = async (request, response) => {
     // Extract uploaded cover image url
-    const coverImage = request.file?.path || "";
+    const uploadedCoverImage = request.file?.path;
 
     if(!request.params.id) 
     {
-        if(coverImage && fs.existsSync(coverImage)) fs.unlinkSync(coverImage);
+        if(uploadedCoverImage && fs.existsSync(uploadedCoverImage)) fs.unlinkSync(uploadedCoverImage);
         throw new ApiError(404, "Blog ID is missing");
     }
 
     if(!isValidObjectId(request.params.id)) 
     {
-        if(coverImage && fs.existsSync(coverImage)) fs.unlinkSync(coverImage);
+        if(uploadedCoverImage && fs.existsSync(uploadedCoverImage)) fs.unlinkSync(uploadedCoverImage);
         throw new ApiError(400, "Invalid MongoDB ID");
     }
 
     try 
     {
+        // Get old cover image
+        const blog = await Blog.findById(request.params.id).select("coverImage");
+        const oldCoverImage = blog?.coverImage;
+
         // If cover image is uploaded
-        if(coverImage)
+        if(uploadedCoverImage)
         {
-            request.body.coverImage = await uploadOnCloudinary(coverImage); // New cover image added
+            request.body.coverImage = await uploadOnCloudinary(uploadedCoverImage); // New cover image added
 
             // Check if old cover image exist
-            const blog = await Blog.findById(request.params.id).select("coverImage");
-            if(blog?.coverImage)
+            if(oldCoverImage)
             {
-                const public_id = getPublicID(blog?.coverImage);
+                const public_id = getPublicID(oldCoverImage);
                 await deleteImageOnCloudinary(public_id); // Remove old cover image
             }
+        }
+        else
+        {
+            request.body.coverImage = oldCoverImage;
         }
 
         // Update blog
@@ -130,7 +137,7 @@ const editBlog = async (request, response) => {
     } 
     catch(error) 
     {
-        if(coverImage && fs.existsSync(coverImage)) fs.unlinkSync(coverImage);
+        if(uploadedCoverImage && fs.existsSync(uploadedCoverImage)) fs.unlinkSync(uploadedCoverImage);
         throw new ApiError(404, error.message);
     }
 };
