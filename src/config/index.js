@@ -1,5 +1,7 @@
+const { frontendURL } = require("../constants");
+
 const corsOptions = {
-    origin:"*",
+    origin:frontendURL,
     methods:["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials:true,
     allowedHeader:["Content-Type", "Authorization"]
