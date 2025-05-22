@@ -3,7 +3,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const { uploadOnCloudinary, getPublicID, deleteImageOnCloudinary } = require("../utils/cloudinary");
 const fs = require("fs");
-const { isValidObjectId, default: mongoose } = require("mongoose")
+const { isValidObjectId, default: mongoose } = require("mongoose");
 
 // Create blog
 const createBlog = async (request, response) => {
@@ -52,11 +52,11 @@ const createBlog = async (request, response) => {
 
 // Fetch all blogs
 const fetchAllBlogs = async (request, response) => {
-    const { page = 1, limit = 10 } = request.params;
+    // const { page = 1, limit = 10 } = request.params;
 
     // Aggregation
     const aggregate = Blog.aggregate([
-        // Lookup
+        // Lookup for likes
         { 
             $lookup:{
                 from:"likes",
@@ -84,11 +84,8 @@ const fetchAllBlogs = async (request, response) => {
                         }
                     },
 
-                    // Destruct array
-                    { $unwind:"$user" },
-
-                    // Replace user wrapper
-                    { $replaceRoot: { newRoot: "$user" } }
+                    { $unwind:"$user" }, // Destruct array
+                    { $replaceRoot: { newRoot: "$user" } } // Replace user wrapper
                 ]
             }
         },
@@ -114,9 +111,50 @@ const fetchAllBlogs = async (request, response) => {
                 }
             }
         },
+
+        // Lookup for comments
+        {
+            $lookup:{
+                from:"comments",
+                localField:"_id",
+                foreignField:"blogID",
+                as:"comments",
+                pipeline:[
+                    {
+                        // Nested lookup
+                        $lookup:{
+                            from:"users",
+                            localField:"commentedBy",
+                            foreignField:"_id",
+                            as:"user",
+                            pipeline:[
+                                {
+                                    $addFields:{
+                                        name:{
+                                            $concat:["$fname", " ", "$lname"]
+                                        }
+                                    }
+                                },
+                                { $project:{ name:1, profile_image:1 } },
+                            ]
+                        }
+                    },
+                    { $unwind:"$user" }, // Destruct user array
+                    { $sort:{ createdAt:-1 } }, // Sort comments
+                ]
+            }
+        },
+
+        // Add field - count of total comments
+        {
+            $addFields:{
+                totalComments:{
+                    $size:"$comments"
+                }
+            }
+        },
         
-        // Sort blogs
-        { $sort:{ createdAt:-1 } }
+        { $sort:{ createdAt:-1 } } // Sort blogs
     ]);
 
     // Pagination options
