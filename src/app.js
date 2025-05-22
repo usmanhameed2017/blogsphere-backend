@@ -22,9 +22,11 @@ app.use("/public", express.static(path.resolve("public")));
 // Imports
 const userRouter = require("./routes/user");
 const blogRouter = require("./routes/blog");
+const likeRouter = require("./routes/like");
 
 // Registered routes
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/blog", blogRouter);
+app.use("/api/v1/like", likeRouter);
 
 module.exports = app;
