@@ -1,5 +1,5 @@
 const blogRouter = require("express").Router();
-const { createBlog, fetchAllBlogs, fetchSingleBlog, editBlog } = require("../controllers/blog");
+const { createBlog, fetchAllBlogs, fetchSingleBlog, editBlog, deleteBlog } = require("../controllers/blog");
 const { checkAuth } = require("../middlewares/auth");
 const upload = require("../middlewares/multer");
 
@@ -9,7 +9,7 @@ blogRouter.route("/")
 
 blogRouter.route("/:id")
 .get(checkAuth, fetchSingleBlog) // Fetch single blog
-.patch(checkAuth, upload.single("coverImage"), editBlog)
-
+.patch(checkAuth, upload.single("coverImage"), editBlog) // Edit blog 
+.delete(checkAuth, deleteBlog); // Delete blog
 
 module.exports = blogRouter;
