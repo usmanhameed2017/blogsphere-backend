@@ -23,10 +23,12 @@ app.use("/public", express.static(path.resolve("public")));
 const userRouter = require("./routes/user");
 const blogRouter = require("./routes/blog");
 const likeRouter = require("./routes/like");
+const commentRouter = require("./routes/comment");
 
 // Registered routes
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/blog", blogRouter);
 app.use("/api/v1/like", likeRouter);
+app.use("/api/v1/comment", commentRouter);
 
 module.exports = app;
