@@ -6,6 +6,8 @@ const { uploadOnCloudinary, getPublicID, deleteImageOnCloudinary } = require("..
 const { generateAccessToken } = require("../utils/auth");
 const { cookieOptions } = require("../config");
 const { isValidObjectId } = require("mongoose");
+const shortid = require('shortid');
+const OtpCode = require("../models/otpCodes");
 
 // User signup
 const signup = async (request, response) => {
@@ -220,4 +222,28 @@ const changePassword = async (request, response) => {
     }
 };
 
-module.exports = { signup, login, logout, fetchAllUsers, fetchSingleUser, editUser, deleteUser, changePassword };
+// Forgot password
+const forgotPassword = async (request, response) => {
+    const { email } = request.body;
+
+    try 
+    {
+        // Check if exist
+        const user = await User.findOne({ email });
+        if(!user) throw new ApiError(404, "This email does not exist");
+
+        // Generate code
+        const code = shortid.generate();
+
+        // Insert into collection
+        const result = await OtpCode.create({ code, user:user?._id });
+        
+        response.send(code)
+    } 
+    catch(error) 
+    {
+        throw new ApiError(404, error.message);
+    }
+};
+
+module.exports = { signup, login, logout, fetchAllUsers, fetchSingleUser, editUser, deleteUser, changePassword, forgotPassword };

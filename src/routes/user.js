@@ -1,4 +1,4 @@
-const { signup, login, logout, fetchAllUsers, fetchSingleUser, editUser, deleteUser, changePassword } = require("../controllers/user");
+const { signup, login, logout, fetchAllUsers, fetchSingleUser, editUser, deleteUser, changePassword, forgotPassword } = require("../controllers/user");
 const { checkAuth } = require("../middlewares/auth");
 const upload = require("../middlewares/multer");
 const userRouter = require("express").Router();
@@ -23,5 +23,8 @@ userRouter.route("/:id")
 
 // Change password
 userRouter.route("/changePassword").patch(checkAuth, changePassword);
+
+// Forgot password
+userRouter.route("/forgotPassword").post(forgotPassword);
 
 module.exports = userRouter;

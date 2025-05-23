@@ -11,6 +11,9 @@ const cloudinaryCloudName = process.env.CLOUDINARY_CLOUD_NAME;
 const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY;
 const cloudinaryApiSecret = process.env.CLOUDINARY_API_SECRET;
 
+const gmail = process.env.GMAIL;
+const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+
 module.exports = { 
     port, 
     mongodbUrl, 
@@ -21,5 +24,7 @@ module.exports = {
     accessTokenExpiry,
     cloudinaryCloudName,
     cloudinaryApiKey,
-    cloudinaryApiSecret
+    cloudinaryApiSecret,
+    gmail,
+    gmailAppPassword
 };
