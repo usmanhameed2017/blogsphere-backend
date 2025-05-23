@@ -3,7 +3,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const { uploadOnCloudinary, getPublicID, deleteImageOnCloudinary } = require("../utils/cloudinary");
 const fs = require("fs");
-const { isValidObjectId, default: mongoose } = require("mongoose");
+const { isValidObjectId, default: mongoose, Mongoose } = require("mongoose");
 
 // Create blog
 const createBlog = async (request, response) => {
@@ -56,13 +56,35 @@ const fetchAllBlogs = async (request, response) => {
 
     // Aggregation
     const aggregate = Blog.aggregate([
+        // Lookup for the user who created blog
+        {
+            $lookup:{
+                from:"users",
+                localField:"createdBy",
+                foreignField:"_id",
+                as:"createdBy",
+                pipeline:[
+                    {
+                        $addFields:{
+                            name:{
+                                $concat:["$fname", " ", "$lname"]
+                            }
+                        }
+                    },
+                    { $project:{ name:1, profile_image:1 } }
+                ]
+            }
+        },
+
+        { $unwind: "$createdBy"  }, // Destruct createdBy array
+
         // Lookup for likes
         { 
             $lookup:{
                 from:"likes",
                 localField:"_id",
                 foreignField:"blogID",
-                as:"likedBy",
+                as:"likes",
                 pipeline:[
                     {
                         // Nested lookup
@@ -94,7 +116,7 @@ const fetchAllBlogs = async (request, response) => {
         {
             $addFields:{
                 totalLikes:{
-                    $size:"$likedBy"
+                    $size:"$likes"
                 }
             }
         },
@@ -104,7 +126,7 @@ const fetchAllBlogs = async (request, response) => {
             $addFields:{
                 isLiked:{
                     $cond:{
-                        if:{ $in:[new mongoose.Types.ObjectId(String(request.user?._id)), "$likedBy._id"] },
+                        if:{ $in:[new mongoose.Types.ObjectId(String(request.user?._id)), "$likes._id"] },
                         then:true,
                         else:false
                     }
@@ -126,7 +148,7 @@ const fetchAllBlogs = async (request, response) => {
                             from:"users",
                             localField:"commentedBy",
                             foreignField:"_id",
-                            as:"user",
+                            as:"commentedBy",
                             pipeline:[
                                 {
                                     $addFields:{
@@ -139,7 +161,7 @@ const fetchAllBlogs = async (request, response) => {
                             ]
                         }
                     },
-                    { $unwind:"$user" }, // Destruct user array
+                    { $unwind:"$commentedBy" }, // Destruct user array
                     { $sort:{ createdAt:-1 } }, // Sort comments
                 ]
             }
@@ -184,7 +206,133 @@ const fetchSingleBlog = async (request, response) => {
 
     try 
     {
-        const blog = await Blog.findById(id);
+        const blog = await Blog.aggregate([
+            // Match by id
+            { $match:{ _id: new mongoose.Types.ObjectId(String(id)) } },
+            
+            // Lookup for the user who created blog
+            {
+                $lookup:{
+                    from:"users",
+                    localField:"createdBy",
+                    foreignField:"_id",
+                    as:"createdBy",
+                    pipeline:[
+                        {
+                            $addFields:{
+                                name:{
+                                    $concat:["$fname", " ", "$lname"]
+                                }
+                            }
+                        },
+                        { $project:{ name:1, profile_image:1 } }
+                    ]
+                }
+            },
+
+            { $unwind: "$createdBy"  }, // Destruct createdBy array
+
+            // Lookup for likes
+            { 
+                $lookup:{
+                    from:"likes",
+                    localField:"_id",
+                    foreignField:"blogID",
+                    as:"likes",
+                    pipeline:[
+                        {
+                            // Nested lookup
+                            $lookup:{
+                                from:"users",
+                                localField:"likedBy",
+                                foreignField:"_id",
+                                as:"user",
+                                pipeline:[
+                                    {
+                                        $addFields:{
+                                            name:{
+                                                $concat:["$fname", " ", "$lname"]
+                                            }
+                                        }
+                                    },
+                                    { $project:{ name:1 } }
+                                ]
+                            }
+                        },
+
+                        { $unwind:"$user" }, // Destruct array
+                        { $replaceRoot: { newRoot: "$user" } } // Replace user wrapper
+                    ]
+                }
+            },
+
+            // Add field - totalLikes
+            {
+                $addFields:{
+                    totalLikes:{
+                        $size:"$likes"
+                    }
+                }
+            },
+
+            // Add field - isLiked
+            {
+                $addFields:{
+                    isLiked:{
+                        $cond:{
+                            if:{ $in:[new mongoose.Types.ObjectId(String(request.user?._id)), "$likes._id"] },
+                            then:true,
+                            else:false
+                        }
+                    }
+                }
+            },
+
+            // Lookup for comments
+            {
+                $lookup:{
+                    from:"comments",
+                    localField:"_id",
+                    foreignField:"blogID",
+                    as:"comments",
+                    pipeline:[
+                        {
+                            // Nested lookup
+                            $lookup:{
+                                from:"users",
+                                localField:"commentedBy",
+                                foreignField:"_id",
+                                as:"commentedBy",
+                                pipeline:[
+                                    {
+                                        $addFields:{
+                                            name:{
+                                                $concat:["$fname", " ", "$lname"]
+                                            }
+                                        }
+                                    },
+                                    { $project:{ name:1, profile_image:1 } },
+                                ]
+                            }
+                        },
+                        { $unwind:"$commentedBy" }, // Destruct user array
+                        { $sort:{ createdAt:-1 } }, // Sort comments
+                    ]
+                }
+            },
+
+            // Add field - count of total comments
+            {
+                $addFields:{
+                    totalComments:{
+                        $size:"$comments"
+                    }
+                }
+            },
+            
+            { $sort:{ createdAt:-1 } } // Sort blogs
+        ]);
+
         if(!blog) throw new ApiError(404, "Blog not found");
         return response.status(200).json(new ApiResponse(200, blog, "A blog has been fetched successfully"));
     } 
