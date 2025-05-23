@@ -209,7 +209,7 @@ const fetchSingleBlog = async (request, response) => {
         const blog = await Blog.aggregate([
             // Match by id
             { $match:{ _id: new mongoose.Types.ObjectId(String(id)) } },
-            
+
             // Lookup for the user who created blog
             {
                 $lookup:{
@@ -230,7 +230,7 @@ const fetchSingleBlog = async (request, response) => {
                 }
             },
 
-            { $unwind: "$createdBy"  }, // Destruct createdBy array
+            { $unwind: "$createdBy" }, // Destruct createdBy array
 
             // Lookup for likes
             { 
