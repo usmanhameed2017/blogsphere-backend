@@ -43,4 +43,23 @@ const editComment = async (request, response) => {
     }
 };
 
-module.exports = { commentOnBlog, editComment };
+// Delete comment
+const deleteComment = async (request, response) => {
+    // Validate comment ID
+    const id = request.params?.id;
+    if(!id) throw new ApiError(404, "Comment ID is missing");
+    if(!isValidObjectId(id)) throw new ApiError(400, "Invalid MongoDB ID");
+
+    try 
+    {
+        const comment = await Comment.findByIdAndDelete(id);
+        if(!comment) throw new ApiError(404, "Comment not found");
+        return response.status(200).json(new ApiResponse(200, comment, "Comment has been deleted successfully"));
+    } 
+    catch(error) 
+    {
+        throw new ApiError(404, error.message);
+    }
+};
+
+module.exports = { commentOnBlog, editComment, deleteComment };
