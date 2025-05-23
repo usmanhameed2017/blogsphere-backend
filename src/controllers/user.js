@@ -190,4 +190,34 @@ const deleteUser = async (request, response) => {
     }
 };
 
-module.exports = { signup, login, logout, fetchAllUsers, fetchSingleUser, editUser, deleteUser };
+// Change password
+const changePassword = async (request, response) => {
+    const id = request.user?._id;
+    const { oldPassword, newPassword, confirmPassword } = request.body;
+
+    try 
+    {
+        // Get user
+        const user = await User.findById(id);
+        if(!user) throw new ApiError(404, "User not found");
+
+        // Match password
+        const isMatched = await user.matchPassword(oldPassword);
+        if(!isMatched) throw new ApiError(400, "Incorrect old password");
+
+        // Compare new password and confirm password
+        if(newPassword !== confirmPassword) throw new ApiError(400, "New password and confirm password is not identical");
+
+        // Change password
+        user.password = newPassword;
+        await user.save();
+
+        return response.status(200).json(new ApiResponse(200, null, "Password has been changed successfully"));
+    } 
+    catch(error) 
+    {
+        throw new ApiError(500 , error.message);
+    }
+};
+
+module.exports = { signup, login, logout, fetchAllUsers, fetchSingleUser, editUser, deleteUser, changePassword };
