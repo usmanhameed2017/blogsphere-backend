@@ -8,6 +8,7 @@ const { cookieOptions } = require("../config");
 const { isValidObjectId } = require("mongoose");
 const shortid = require('shortid');
 const OtpCode = require("../models/otpCodes");
+const sendEmail = require("../service/mailer");
 
 // User signup
 const signup = async (request, response) => {
@@ -236,9 +237,12 @@ const forgotPassword = async (request, response) => {
         const code = shortid.generate();
 
         // Insert into collection
-        const result = await OtpCode.create({ code, user:user?._id });
+        const data = await OtpCode.create({ code, user:user?._id });
+
+        const result = await sendEmail(email, "Password reset", "Testing email this is");
+        if(!result) throw new ApiError(500, "Unable to send email");
         
-        response.send(code)
+        response.send(data);
     } 
     catch(error) 
     {
