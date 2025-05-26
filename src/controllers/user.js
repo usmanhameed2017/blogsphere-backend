@@ -9,6 +9,8 @@ const { isValidObjectId } = require("mongoose");
 const shortid = require('shortid');
 const OtpCode = require("../models/otpCodes");
 const sendEmail = require("../service/mailer");
+const { generateSecurityToken, verifySecurityToken } = require("../utils/securityTokens");
+const { frontendURL } = require("../constants");
 
 // User signup
 const signup = async (request, response) => {
@@ -237,12 +239,19 @@ const forgotPassword = async (request, response) => {
         const code = shortid.generate();
 
         // Insert into collection
-        const data = await OtpCode.create({ code, user:user?._id });
+        await OtpCode.create({ code, user:user?._id });
 
-        const result = await sendEmail(email, "Password reset", "Testing email this is");
+        // Send email
+        const result = await sendEmail(email, "Password reset", `Hello ${user.fname}! Your verification code is ${code}`);
         if(!result) throw new ApiError(500, "Unable to send email");
-        
-        response.send(data);
+
+        // Generate security token
+        const token = generateSecurityToken(user);
+        if(!token) throw new ApiError(400, "Unable to generate security token");
+
+        return response.status(307)
+        .cookie("stepOne", token, cookieOptions)
+        .redirect(`${frontendURL}/security/verifyCode`);
     } 
     catch(error) 
     {
@@ -250,4 +259,76 @@ const forgotPassword = async (request, response) => {
     }
 };
 
-module.exports = { signup, login, logout, fetchAllUsers, fetchSingleUser, editUser, deleteUser, changePassword, forgotPassword };
+// Validate step:01
+const verificationCodePage = (request, response) => {
+    return response.status(200).json(new ApiResponse(200, null, "Successfully redirect"));
+};
+
+// Validate verification code
+const validateVerificationCode = async (request, response) => {
+    try 
+    {
+        // Get code
+        const result = await OtpCode.findOne({ code:request.body.code, user:_id });
+        if(!result) throw new ApiError(400, "Invalid code");
+
+        // Get user
+        const user = await User.findById(_id);
+        if(!user) throw new ApiError(404, "User not found");
+
+        // Generate security token
+        const token = generateSecurityToken(user);
+        if(!token) throw new ApiError(400, "Unable to generate security token");
+
+        return response.status(307)
+        .cookie("stepTwo", token, cookieOptions)
+        .redirect(`${frontendURL}/security/resetPassword`);
+    } 
+    catch (error) 
+    {
+        throw new ApiError(500, error.message);
+    }
+};
+
+// Reset password page
+const resetPasswordPage = (request, response) => {
+    return response.status(200).json(new ApiResponse(200, null, "Successfully redirect"));
+}
+
+// Reset password
+const resetPassword = async (request, response) => {
+    const { newPassword, confirmPassword } = request.body;
+    if(newPassword !== confirmPassword) 
+    throw new ApiError(400, "New password and confirm password is not identical");
+
+    try 
+    {
+        const user = await User.findById(_id);
+        if(!user) throw new ApiError(404, "User not found");
+
+        user.password = newPassword;
+        await user.save();
+
+        return response.status(200).json(new ApiResponse(200, null, "Password has been updated successfully"));
+    } 
+    catch(error) 
+    {
+        throw new ApiError(500, error.message);
+    }
+}
+
+module.exports = { 
+    signup, 
+    login, 
+    logout, 
+    fetchAllUsers, 
+    fetchSingleUser, 
+    editUser, 
+    deleteUser, 
+    changePassword, 
+    forgotPassword, 
+    verificationCodePage,
+    validateVerificationCode,
+    resetPasswordPage,
+    resetPassword 
+};
