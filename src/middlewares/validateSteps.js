@@ -7,6 +7,8 @@ const validateStepOne = (request, response, next) => {
 
     const _id = verifySecurityToken(token);
     if(!_id) return response.status(308).redirect(`${frontendURL}/`);
+    
+    request._id = _id;
     return next();
 };
 
@@ -17,6 +19,8 @@ const validateStepTwo = (request, response, next) => {
 
     const _id = verifySecurityToken(token);
     if(!_id) return response.status(308).redirect(`${frontendURL}/`);
+
+    request._id = _id;
     return next();
 };
 

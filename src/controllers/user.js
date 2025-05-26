@@ -269,11 +269,11 @@ const validateVerificationCode = async (request, response) => {
     try 
     {
         // Get code
-        const result = await OtpCode.findOne({ code:request.body.code, user:_id });
+        const result = await OtpCode.findOne({ code:request.body.code, user:request._id });
         if(!result) throw new ApiError(400, "Invalid code");
 
         // Get user
-        const user = await User.findById(_id);
+        const user = await User.findById(request._id);
         if(!user) throw new ApiError(404, "User not found");
 
         // Generate security token
@@ -303,7 +303,7 @@ const resetPassword = async (request, response) => {
 
     try 
     {
-        const user = await User.findById(_id);
+        const user = await User.findById(request._id);
         if(!user) throw new ApiError(404, "User not found");
 
         user.password = newPassword;
