@@ -269,7 +269,7 @@ const validateVerificationCode = async (request, response) => {
     try 
     {
         // Get code
-        const result = await OtpCode.findOne({ code:request.body.code, user:request._id });
+        const result = await OtpCode.findOne({ code:request.body.code?.trim(), user:request._id });
         if(!result) throw new ApiError(400, "Invalid code");
 
         // Get user
