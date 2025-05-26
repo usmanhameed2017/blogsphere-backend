@@ -126,7 +126,7 @@ const fetchAllBlogs = async (request, response) => {
             $addFields:{
                 isLiked:{
                     $cond:{
-                        if:{ $in:[new mongoose.Types.ObjectId(String(request.user?._id)), "$likes._id"] },
+                        if:{ $in:[request.user?._id ? new mongoose.Types.ObjectId(String(request.user?._id)) : null, "$likes._id"] },
                         then:true,
                         else:false
                     }

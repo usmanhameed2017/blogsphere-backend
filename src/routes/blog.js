@@ -5,7 +5,7 @@ const upload = require("../middlewares/multer");
 
 blogRouter.route("/")
 .post(checkAuth, upload.fields([{ name:"coverImage", maxCount:1 }, { name:"images", maxCount:5 }]), createBlog) // Create blog
-.get(checkAuth, fetchAllBlogs); // Fetch all blogs
+.get(fetchAllBlogs); // Fetch all blogs
 
 blogRouter.route("/:id")
 .get(checkAuth, fetchSingleBlog) // Fetch single blog
