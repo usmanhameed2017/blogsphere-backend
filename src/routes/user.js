@@ -1,6 +1,6 @@
 const { signup, login, logout, fetchAllUsers, fetchSingleUser,
 editUser, deleteUser, changePassword, forgotPassword, validateVerificationCode,
-resetPassword, verificationCodePage, resetPasswordPage} = require("../controllers/user");
+resetPassword, verificationCodePage, resetPasswordPage } = require("../controllers/user");
 
 const { checkAuth } = require("../middlewares/auth");
 const upload = require("../middlewares/multer");
@@ -36,7 +36,7 @@ userRouter.route("/security/verifyCode")
 .post(validateStepOne, validateVerificationCode);
 
 // Reset password
-userRouter.get("/security/resetPassword")
+userRouter.route("/security/resetPassword")
 .get(validateStepTwo, resetPasswordPage)
 .post(validateStepTwo, resetPassword);
 
