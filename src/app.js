@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const { corsOptions, limiterOptions } = require("./config");
 const { cookieParserSecret } = require("./constants");
 const path = require("path");
+const errorHandler = require("./middlewares/errorHandler");
 
 // Express app
 const app = express();
@@ -30,5 +31,8 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/blog", blogRouter);
 app.use("/api/v1/like", likeRouter);
 app.use("/api/v1/comment", commentRouter);
+
+// Error handling middleware
+app.use(errorHandler);
 
 module.exports = app;
