@@ -11,6 +11,7 @@ const generateAccessToken = (user) => {
         fname:user.fname,
         email:user.email,
         username:user.username,
+        profile_image:user.profile_image,
         role:user.role
     };
 
