@@ -1,6 +1,7 @@
 const { signup, login, logout, fetchAllUsers, fetchSingleUser,
 editUser, deleteUser, changePassword, forgotPassword, validateVerificationCode,
-resetPassword, verificationCodePage, resetPasswordPage } = require("../controllers/user");
+resetPassword, verificationCodePage, resetPasswordPage, 
+verifyAccessToken} = require("../controllers/user");
 
 const { checkAuth } = require("../middlewares/auth");
 const upload = require("../middlewares/multer");
@@ -12,6 +13,9 @@ userRouter.route("/signup").post(upload.single("profile_image"), signup);
 
 // User login
 userRouter.route("/login").post(login);
+
+// Verify access token
+userRouter.route("/verifyAccessToken").get(checkAuth, verifyAccessToken);
 
 // User logout
 userRouter.route("/logout").get(checkAuth, logout);

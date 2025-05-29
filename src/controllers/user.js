@@ -3,7 +3,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const fs = require("fs");
 const { uploadOnCloudinary, getPublicID, deleteImageOnCloudinary } = require("../utils/cloudinary");
-const { generateAccessToken } = require("../utils/auth");
+const { generateAccessToken, verifyToken } = require("../utils/auth");
 const { cookieOptions } = require("../config");
 const { isValidObjectId } = require("mongoose");
 const shortid = require('shortid');
@@ -78,6 +78,12 @@ const login = async (request, response) => {
     .cookie("accessToken", accessToken, cookieOptions)
     .json(new ApiResponse(200, { accessToken, user:userData }, "Login successful!"));
 }
+
+// Verify access token
+const verifyAccessToken = async (request, response) => {
+    if(!request.user) throw new ApiError(401, "Unauthenticated");
+    return response.status(200).json(new ApiResponse(200, request.user, "Authenticated"));
+};
 
 // Logout
 const logout = (request, response) => {
@@ -320,6 +326,7 @@ const resetPassword = async (request, response) => {
 module.exports = { 
     signup, 
     login, 
+    verifyAccessToken,
     logout, 
     fetchAllUsers, 
     fetchSingleUser, 
