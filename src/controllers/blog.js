@@ -197,6 +197,143 @@ const fetchAllBlogs = async (request, response) => {
     }
 };
 
+// Fetch recent blogs
+const fetchRecentBlogs = async (request, response) => {
+    try 
+    {
+        const blogs = await Blog.aggregate([
+            // Lookup for the user who created blog
+            {
+                $lookup:{
+                    from:"users",
+                    localField:"createdBy",
+                    foreignField:"_id",
+                    as:"createdBy",
+                    pipeline:[
+                        {
+                            $addFields:{
+                                name:{
+                                    $concat:["$fname", " ", "$lname"]
+                                }
+                            }
+                        },
+                        { $project:{ name:1, profile_image:1 } }
+                    ]
+                }
+            },
+    
+            { $unwind: "$createdBy"  }, // Destruct createdBy array
+    
+            // Lookup for likes
+            { 
+                $lookup:{
+                    from:"likes",
+                    localField:"_id",
+                    foreignField:"blogID",
+                    as:"likes",
+                    pipeline:[
+                        {
+                            // Nested lookup
+                            $lookup:{
+                                from:"users",
+                                localField:"likedBy",
+                                foreignField:"_id",
+                                as:"user",
+                                pipeline:[
+                                    {
+                                        $addFields:{
+                                            name:{
+                                                $concat:["$fname", " ", "$lname"]
+                                            }
+                                        }
+                                    },
+                                    { $project:{ name:1 } }
+                                ]
+                            }
+                        },
+    
+                        { $unwind:"$user" }, // Destruct array
+                        { $replaceRoot: { newRoot: "$user" } } // Replace user wrapper
+                    ]
+                }
+            },
+    
+            // Add field - totalLikes
+            {
+                $addFields:{
+                    totalLikes:{
+                        $size:"$likes"
+                    }
+                }
+            },
+    
+            // Add field - isLiked
+            {
+                $addFields:{
+                    isLiked:{
+                        $cond:{
+                            if:{ $in:[request.user?._id ? new mongoose.Types.ObjectId(String(request.user?._id)) : null, "$likes._id"] },
+                            then:true,
+                            else:false
+                        }
+                    }
+                }
+            },
+    
+            // Lookup for comments
+            {
+                $lookup:{
+                    from:"comments",
+                    localField:"_id",
+                    foreignField:"blogID",
+                    as:"comments",
+                    pipeline:[
+                        {
+                            // Nested lookup
+                            $lookup:{
+                                from:"users",
+                                localField:"commentedBy",
+                                foreignField:"_id",
+                                as:"commentedBy",
+                                pipeline:[
+                                    {
+                                        $addFields:{
+                                            name:{
+                                                $concat:["$fname", " ", "$lname"]
+                                            }
+                                        }
+                                    },
+                                    { $project:{ name:1, profile_image:1 } },
+                                ]
+                            }
+                        },
+                        { $unwind:"$commentedBy" }, // Destruct user array
+                        { $sort:{ createdAt:-1 } }, // Sort comments
+                    ]
+                }
+            },
+    
+            // Add field - count of total comments
+            {
+                $addFields:{
+                    totalComments:{
+                        $size:"$comments"
+                    }
+                }
+            },
+            
+            { $limit:12 },
+            { $sample:{ size:12 } } // Random blogs
+        ]);
+        
+        return response.status(200).json(new ApiResponse(200, blogs, "Recent blogs have been fetched successfully"));
+    } 
+    catch(error) 
+    {
+        throw new ApiError(404, "Blogs not found")
+    }
+};
+
 // Fetch single blog
 const fetchSingleBlog = async (request, response) => {
     // Extract id from route paramter
@@ -422,4 +559,4 @@ const deleteBlog = async (request, response) => {
     }
 };
 
-module.exports = { createBlog, fetchAllBlogs, fetchSingleBlog, editBlog, deleteBlog };
+module.exports = { createBlog, fetchAllBlogs, fetchRecentBlogs, fetchSingleBlog, editBlog, deleteBlog };

@@ -1,7 +1,7 @@
 const { signup, login, logout, fetchAllUsers, fetchSingleUser,
 editUser, deleteUser, changePassword, forgotPassword, validateVerificationCode,
 resetPassword, verificationCodePage, resetPasswordPage, 
-verifyAccessToken} = require("../controllers/user");
+verifyAccessToken } = require("../controllers/user");
 
 const { checkAuth } = require("../middlewares/auth");
 const upload = require("../middlewares/multer");
