@@ -479,6 +479,159 @@ const fetchSingleBlog = async (request, response) => {
     }
 };
 
+// My blogs
+const fetchMyBlogs = async (request, response) => {
+    const { page = 1, limit = 10 } = request.params; 
+
+    const id = request.user?._id || "";
+    if(!id) throw new ApiError(404, "Blog ID is missing");
+    if(!isValidObjectId(id)) throw new ApiError(400, "Invalid MongoDB ID");
+
+    try 
+    {
+        const aggregate = Blog.aggregate([
+            // Match by id
+            { $match:{ createdBy: new mongoose.Types.ObjectId(String(id)) } },
+
+            // Lookup for the user who created blog
+            {
+                $lookup:{
+                    from:"users",
+                    localField:"createdBy",
+                    foreignField:"_id",
+                    as:"createdBy",
+                    pipeline:[
+                        {
+                            $addFields:{
+                                name:{
+                                    $concat:["$fname", " ", "$lname"]
+                                }
+                            }
+                        },
+                        { $project:{ name:1, profile_image:1 } }
+                    ]
+                }
+            },
+
+            { $unwind: "$createdBy" }, // Destruct createdBy array
+
+            // Lookup for likes
+            { 
+                $lookup:{
+                    from:"likes",
+                    localField:"_id",
+                    foreignField:"blogID",
+                    as:"likes",
+                    pipeline:[
+                        {
+                            // Nested lookup
+                            $lookup:{
+                                from:"users",
+                                localField:"likedBy",
+                                foreignField:"_id",
+                                as:"user",
+                                pipeline:[
+                                    {
+                                        $addFields:{
+                                            name:{
+                                                $concat:["$fname", " ", "$lname"]
+                                            }
+                                        }
+                                    },
+                                    { $project:{ name:1 } }
+                                ]
+                            }
+                        },
+
+                        { $unwind:"$user" }, // Destruct array
+                        { $replaceRoot: { newRoot: "$user" } } // Replace user wrapper
+                    ]
+                }
+            },
+
+            // Add field - totalLikes
+            {
+                $addFields:{
+                    totalLikes:{
+                        $size:"$likes"
+                    }
+                }
+            },
+
+            // Add field - isLiked
+            {
+                $addFields:{
+                    isLiked:{
+                        $cond:{
+                            if:{ $in:[new mongoose.Types.ObjectId(String(request.user?._id)), "$likes._id"] },
+                            then:true,
+                            else:false
+                        }
+                    }
+                }
+            },
+
+            // Lookup for comments
+            {
+                $lookup:{
+                    from:"comments",
+                    localField:"_id",
+                    foreignField:"blogID",
+                    as:"comments",
+                    pipeline:[
+                        {
+                            // Nested lookup
+                            $lookup:{
+                                from:"users",
+                                localField:"commentedBy",
+                                foreignField:"_id",
+                                as:"commentedBy",
+                                pipeline:[
+                                    {
+                                        $addFields:{
+                                            name:{
+                                                $concat:["$fname", " ", "$lname"]
+                                            }
+                                        }
+                                    },
+                                    { $project:{ name:1, profile_image:1 } },
+                                ]
+                            }
+                        },
+                        { $unwind:"$commentedBy" }, // Destruct user array
+                        { $sort:{ createdAt:-1 } }, // Sort comments
+                    ]
+                }
+            },
+
+            // Add field - count of total comments
+            {
+                $addFields:{
+                    totalComments:{
+                        $size:"$comments"
+                    }
+                }
+            },
+            
+            { $sort:{ createdAt:-1 } } // Sort blogs
+        ]);
+
+        // Pagination options
+        const options = {
+            page: parseInt(page),
+            limit: parseInt(limit)
+        };
+
+        // Execute
+        const blogs = await Blog.aggregatePaginate(aggregate, options);
+        return response.status(200).json(new ApiResponse(200, blogs, "A blog has been fetched successfully"));
+    } 
+    catch(error) 
+    {
+        throw new ApiError(404, error.message);
+    }
+};
+
 // Edit blog
 const editBlog = async (request, response) => {
     // Extract id from route paramter
@@ -559,4 +712,4 @@ const deleteBlog = async (request, response) => {
     }
 };
 
-module.exports = { createBlog, fetchAllBlogs, fetchRecentBlogs, fetchSingleBlog, editBlog, deleteBlog };
+module.exports = { createBlog, fetchAllBlogs, fetchRecentBlogs, fetchSingleBlog, fetchMyBlogs, editBlog, deleteBlog };
