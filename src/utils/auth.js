@@ -9,6 +9,9 @@ const generateAccessToken = (user) => {
     const payload = {
         _id:user._id,
         fname:user.fname,
+        lname:user.lname,
+        age:user.age,
+        gender:user.gender,
         email:user.email,
         username:user.username,
         profile_image:user.profile_image,
