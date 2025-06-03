@@ -1,11 +1,10 @@
 const { signup, login, logout, fetchAllUsers, fetchSingleUser,
-editUser, deleteUser, changePassword, forgotPassword, validateVerificationCode,
-resetPassword, verificationCodePage, resetPasswordPage, 
-verifyAccessToken } = require("../controllers/user");
+editUser, deleteUser, changePassword, forgotPassword,
+resetPassword, verifyAccessToken, 
+verifyResetLink} = require("../controllers/user");
 
 const { checkAuth } = require("../middlewares/auth");
 const upload = require("../middlewares/multer");
-const { validateStepOne, validateStepTwo } = require("../middlewares/validateSteps");
 const userRouter = require("express").Router();
 
 // User signup
@@ -34,14 +33,10 @@ userRouter.route("/changePassword").patch(checkAuth, changePassword);
 // Forgot password
 userRouter.route("/forgotPassword").post(forgotPassword);
 
-// Verify code
-userRouter.route("/security/verifyCode")
-.get(validateStepOne, verificationCodePage)
-.post(validateStepOne, validateVerificationCode);
+// Check reset password link
+userRouter.route("/security/verifyResetLink/:code").get(verifyResetLink);
 
 // Reset password
-userRouter.route("/security/resetPassword")
-.get(validateStepTwo, resetPasswordPage)
-.post(validateStepTwo, resetPassword);
+userRouter.route("/security/resetPassword").patch(resetPassword);
 
 module.exports = userRouter;

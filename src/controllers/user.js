@@ -3,13 +3,12 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const fs = require("fs");
 const { uploadOnCloudinary, getPublicID, deleteImageOnCloudinary } = require("../utils/cloudinary");
-const { generateAccessToken, verifyToken } = require("../utils/auth");
+const { generateAccessToken } = require("../utils/auth");
 const { cookieOptions } = require("../config");
 const { isValidObjectId } = require("mongoose");
 const shortid = require('shortid');
 const OtpCode = require("../models/otpCodes");
 const sendEmail = require("../service/mailer");
-const { generateSecurityToken, verifySecurityToken } = require("../utils/securityTokens");
 const { frontendURL } = require("../constants");
 
 // User signup
@@ -169,7 +168,13 @@ const editUser = async (request, response) => {
         }
 
         const updatedUser = await User.findByIdAndUpdate(request.params.id, request.body, { new:true }).select("-password");
-        return response.status(200).json(new ApiResponse(200, updatedUser, "User has been updated successfully!"))
+
+        // Generate access token so that frontend UI will be in sync
+        const accessToken = generateAccessToken(updatedUser);
+
+        return response.status(200)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .json(new ApiResponse(200, updatedUser, "User has been updated successfully!"))
     } 
     catch(error) 
     {
@@ -177,7 +182,6 @@ const editUser = async (request, response) => {
         if(request.file?.path && fs.existsSync(request.file?.path)) fs.unlinkSync(request.file?.path);
         throw new ApiError(500, error.message);
     }
-
 };
 
 // Delete user
@@ -247,17 +251,14 @@ const forgotPassword = async (request, response) => {
         // Insert into collection
         await OtpCode.create({ code, user:user?._id });
 
+        // Reset password link with the combination of unique id
+        const resetPasswordLink = `${frontendURL}/security/verifyResetLink/${code}`;
+
         // Send email
-        const result = await sendEmail(email, "Password reset", `Hello ${user.fname}! Your verification code is ${code}`);
+        const result = await sendEmail(email, "Password reset", `Hello ${user.fname}! Here is your password reset link: ${resetPasswordLink}`);
         if(!result) throw new ApiError(500, "Unable to send email");
 
-        // Generate security token
-        const token = generateSecurityToken(user);
-        if(!token) throw new ApiError(400, "Unable to generate security token");
-
-        return response.status(307)
-        .cookie("stepOne", token, cookieOptions)
-        .redirect(`${frontendURL}/security/verifyCode`);
+        return response.status(200).json(new ApiResponse(200, null, `We have sent a password reset link to ${email}`));
     } 
     catch(error) 
     {
@@ -265,30 +266,17 @@ const forgotPassword = async (request, response) => {
     }
 };
 
-// Validate step:01
-const verificationCodePage = (request, response) => {
-    return response.status(200).json(new ApiResponse(200, null, "Successfully redirect"));
-};
+// Verify reset
+const verifyResetLink = async (request, response) => {
+    const code = request.params?.code || "";
+    if(!code) throw new ApiError(404, "Reset link is missing");
 
-// Validate verification code
-const validateVerificationCode = async (request, response) => {
     try 
     {
-        // Get code
-        const result = await OtpCode.findOne({ code:request.body.code?.trim(), user:request._id });
-        if(!result) throw new ApiError(400, "Invalid code");
-
-        // Get user
-        const user = await User.findById(request._id);
-        if(!user) throw new ApiError(404, "User not found");
-
-        // Generate security token
-        const token = generateSecurityToken(user);
-        if(!token) throw new ApiError(400, "Unable to generate security token");
-
-        return response.status(307)
-        .cookie("stepTwo", token, cookieOptions)
-        .redirect(`${frontendURL}/security/resetPassword`);
+        const result = await OtpCode.findOne({ code:code });
+        if(!result) throw new ApiError(400, "Invalid reset link");
+        
+        return response.status(200).json(new ApiResponse(200, { _id:result?._id, userId:result?.user }, "Valid reset link"));
     } 
     catch (error) 
     {
@@ -296,25 +284,24 @@ const validateVerificationCode = async (request, response) => {
     }
 };
 
-// Reset password page
-const resetPasswordPage = (request, response) => {
-    return response.status(200).json(new ApiResponse(200, null, "Successfully redirect"));
-}
-
 // Reset password
 const resetPassword = async (request, response) => {
-    const { newPassword, confirmPassword } = request.body;
+    const { _id, userId, newPassword, confirmPassword } = request.body;
     if(newPassword !== confirmPassword) 
     throw new ApiError(400, "New password and confirm password is not identical");
 
     try 
     {
-        const user = await User.findById(request._id);
+        const user = await User.findById(userId);
         if(!user) throw new ApiError(404, "User not found");
 
         user.password = newPassword;
         await user.save();
 
+        // Delete code
+        await OtpCode.findByIdAndDelete(_id);
+
+        // await OtpCode.
         return response.status(200).json(new ApiResponse(200, null, "Password has been updated successfully"));
     } 
     catch(error) 
@@ -334,8 +321,6 @@ module.exports = {
     deleteUser, 
     changePassword, 
     forgotPassword, 
-    verificationCodePage,
-    validateVerificationCode,
-    resetPasswordPage,
-    resetPassword 
+    resetPassword,
+    verifyResetLink 
 };
