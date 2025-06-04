@@ -310,6 +310,18 @@ const resetPassword = async (request, response) => {
     }
 }
 
+// Login as google
+const googleLogin = (request, response) => {
+    if(!request.user) throw new ApiError(404, "User not found");
+
+    const accessToken = generateAccessToken(request.user);
+    if(!accessToken) throw new ApiError(500, "Unable to generate access token");
+
+    return response.status(200)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .redirect(frontendURL);
+};
+
 module.exports = { 
     signup, 
     login, 
@@ -322,5 +334,6 @@ module.exports = {
     changePassword, 
     forgotPassword, 
     resetPassword,
-    verifyResetLink 
+    verifyResetLink,
+    googleLogin
 };

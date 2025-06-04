@@ -1,7 +1,9 @@
+const passport = require("passport");
 const { signup, login, logout, fetchAllUsers, fetchSingleUser,
 editUser, deleteUser, changePassword, forgotPassword,
 resetPassword, verifyAccessToken, 
-verifyResetLink} = require("../controllers/user");
+verifyResetLink,
+googleLogin} = require("../controllers/user");
 
 const { checkAuth } = require("../middlewares/auth");
 const upload = require("../middlewares/multer");
@@ -38,5 +40,9 @@ userRouter.route("/security/verifyResetLink/:code").get(verifyResetLink);
 
 // Reset password
 userRouter.route("/security/resetPassword").patch(resetPassword);
+
+// Login as google
+userRouter.route('/auth/google').get(passport.authenticate('google', { scope:['profile', 'email'], prompt:"select_account" }));
+userRouter.route('/auth/google/callback').get(passport.authenticate('google', { session: false }), googleLogin);
 
 module.exports = userRouter;

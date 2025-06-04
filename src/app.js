@@ -3,9 +3,11 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
 const { corsOptions, limiterOptions } = require("./config");
-const { cookieParserSecret } = require("./constants");
+const { cookieParserSecret, backendUrl } = require("./constants");
 const path = require("path");
+const passport = require("passport");
 const errorHandler = require("./middlewares/errorHandler");
+require("./auth/google");
 
 // Express app
 const app = express();
@@ -17,6 +19,7 @@ app.use(cookieParser(cookieParserSecret));
 app.use(express.urlencoded({ extended:true, limit:"20kb" }));
 app.use(express.json({ limit:"20kb" }));
 app.use("/public", express.static(path.resolve("public")));
+app.use(passport.initialize());
 
 
 // ************* ROUTES ************* //
@@ -27,10 +30,10 @@ const likeRouter = require("./routes/like");
 const commentRouter = require("./routes/comment");
 
 // Registered routes
-app.use("/api/v1/user", userRouter);
-app.use("/api/v1/blog", blogRouter);
-app.use("/api/v1/like", likeRouter);
-app.use("/api/v1/comment", commentRouter);
+app.use(`${backendUrl}/user`, userRouter);
+app.use(`${backendUrl}/blog`, blogRouter);
+app.use(`${backendUrl}/like`, likeRouter);
+app.use(`${backendUrl}/comment`, commentRouter);
 
 // Error handling middleware
 app.use(errorHandler);

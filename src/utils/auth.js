@@ -8,13 +8,13 @@ const generateAccessToken = (user) => {
     // User payload
     const payload = {
         _id:user._id,
-        fname:user.fname,
-        lname:user.lname,
-        age:user.age,
-        gender:user.gender,
-        email:user.email,
-        username:user.username,
-        profile_image:user.profile_image,
+        fname:user.fname || "",
+        lname:user.lname || "",
+        age:user.age || "",
+        gender:user.gender || "",
+        email:user.email || "",
+        username:user.username || "",
+        profile_image:user.profile_image || "",
         role:user.role
     };
 
