@@ -16,7 +16,7 @@ const sendEmail = async (to, subject, text) => {
         from: gmail,
         to:to,
         subject:subject,
-        text:text
+        html:text
     }
 
     try 

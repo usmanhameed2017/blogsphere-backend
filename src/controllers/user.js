@@ -9,7 +9,8 @@ const { isValidObjectId } = require("mongoose");
 const shortid = require('shortid');
 const OtpCode = require("../models/otpCodes");
 const sendEmail = require("../service/mailer");
-const { frontendURL } = require("../constants");
+const { frontendURL, gmail } = require("../constants");
+const path = require("path");
 
 // User signup
 const signup = async (request, response) => {
@@ -310,6 +311,26 @@ const resetPassword = async (request, response) => {
     }
 }
 
+// Contact us (email)
+const contactUs = async (request, response) => {
+    const { name, email, message } = request.body;
+
+    // Get HTML template
+    const html = fs.readFileSync(path.resolve(__dirname, "../../public/contact.html"), "utf-8");
+
+    // Replace placeholders
+    const filledHtml = html
+    .replace('{{name}}', name)
+    .replace('{{email}}', email)
+    .replace('{{message}}', message);
+
+    // Send mail
+    const result = await sendEmail(gmail, "Contact Us Form", filledHtml);
+    if (!result) throw new Error("Email sending failed");
+
+    return response.status(200).json(new ApiResponse(200, null, "Your mail has been sent successfully"));
+};
+
 // Login as google
 const googleLogin = (request, response) => {
     if(!request.user) throw new ApiError(404, "User not found");
@@ -335,5 +356,6 @@ module.exports = {
     forgotPassword, 
     resetPassword,
     verifyResetLink,
+    contactUs,
     googleLogin
 };
